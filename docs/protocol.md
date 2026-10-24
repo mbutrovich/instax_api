@@ -65,7 +65,7 @@ The battery state splits into a charge level from 0 to 3 in its low two bits and
 |---|---|---|
 | `0x00` | Success | Verified |
 | `0x7F` | Busy. Status polls return it while printing. | Verified |
-| `0xA0` | Another device is using the printer | Original project |
+| `0xA0` | Another device is using the printer | Verified |
 | `0xA1` | The image data was rejected | Original project |
 | `0xA2` | Battery empty | Original project |
 | `0xA3` | Printing | Original project |
@@ -80,7 +80,7 @@ The battery state splits into a charge level from 0 to 3 in its low two bits and
 | `0xF7` | Wrong PIN | Verified |
 | `0xF8` | Sensor error | Original project |
 
-The original project names these codes but does not say when the printer returns them. Of the error codes, only `0xF7` has been observed.
+The original project names these codes but does not say when the printer returns them. Of the error codes, only `0xA0` and `0xF7` have been observed.
 
 ## Opcodes
 
@@ -117,7 +117,9 @@ The SP-3 sends these Specifications values. **Verified.**
 
 The SP-2 frames in the original project send width 600, 16 at offset 14 and 0 at offset 16, with the other fields the same.
 
-Lock gives one client exclusive use of the printer. **Unconfirmed.**
+Lock gives one session exclusive use of the printer. While one session id holds the lock, the printer answers every command from any other session id with `0xA0` and no payload, including Model name, Lock and Unlock. The session holding the lock keeps getting `0x00`. After it unlocks, other sessions get `0x00` again. Both sessions in this test ran on the same computer, so the printer tells clients apart by session id, not only by address. **Verified.**
+
+Whether the lock expires on its own, or only on unlock or power off, is **unconfirmed**.
 
 The Lock command and response frames in the original project's test suite show that the original client sent Lock as well.
 
@@ -160,6 +162,7 @@ A printer with PIN protection turned off accepts any PIN. **Unconfirmed.**
 
 - What response bytes 8 to 11 and 13 hold.
 - What the Specifications fields at offsets 6, 14 and 16 mean.
-- How the printer reports the other error cases, such as no film, an open cover or a second client.
+- How the printer reports the other error cases, such as no film or an open cover.
+- Whether the lock expires if its holder never unlocks.
 
 Running a command with `-v` logs every response frame in hex, which answers most of these when the situation comes up.
