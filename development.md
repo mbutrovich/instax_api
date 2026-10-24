@@ -5,43 +5,30 @@
 
 * Install uv on your development machine: https://docs.astral.sh/uv/
 * Run `uv sync` to create the virtual environment in `.venv` and install all main and dev dependencies.
-* Prefix commands with `uv run` to run them in the virtual environment, for example `uv run pytest instax`.
+* Prefix commands with `uv run` to run them in the virtual environment, for example `uv run pytest`.
 * Run `uv run pre-commit install` and then `uv run pre-commit install --hook-type commit-msg` to set up the pre-commit checks.
 
-## Running the Test Server
+## Layout
 
-The Test server was written to allow developers to simulate an Instax SP-2 printer in order to test the client.
-
-In order to connect the application, the device running the test server will need to be hosting a WiFi network with an SSID starting with `INSTAX-` followed by a number of hex characters (This would usually be the MAC address of the printer). In my case, I used a Raspberry Pi Model 3 to host the wireless network and run the Test Server on.
-Once you have set up the pi following these instructions: Tutorial link goes here..., you will need to usually run these three commands :
-
-```
-sudo service udhcpd start
-sudo hostapd /etc/hostapd/hostapd.conf (This will keep running so do it in another tab or bg)
-sudo ifconfig wlan0 192.168.0.251
-```
-
-Then run: `python3 -m instax.debugServer`
-
-## Hidden options in instax-print CLI client
-In order to make debugging and using the test server easier, there are some hidden options in the instax-print application that you can use, these include:
-
-```
-  -d, --debug           Logs extra debug data to log.
-  -l, --log             Log information to log file ddmmyy-hhmmss.log
-  -o HOST, --host HOST  The Host IP to connect to the server on.
-  -p PORT, --port PORT  The port to connect to the server on.
-  -t TIMEOUT, --timeout TIMEOUT
-                        The timeout to use when communicating.
-```
-
-For example, when using the test server, you can use the following command to print: `python3 -m instax.print myImage.jpg -o localhost -l`
-
-The `-d / --debug` option will print a lot more data to the log file, specifically detailed dumps of every command / response sent or received by the client. This is handy when trying to identify issues in the packet library.
+* `instax/protocol.py` encodes and decodes frames. Its module docstring describes the frame format.
+* `instax/client.py` holds the `Printer` class and the print sequence.
+* `instax/image.py` prepares photos and encodes them in the printer's raw image format.
+* `instax/simulator.py` is a fake printer that the tests run against.
+* `instax/cli.py` is the `instax-print` command.
 
 ## Running tests
-Simply run the command: `uv run pytest instax`
 
+Run `uv run pytest`. The tests use the simulator, so they need no printer.
+
+## Running the simulator
+
+Run `uv run instax-simulator --save-dir .` to start a fake SP-3 on port 8080 that saves each image it receives as a PNG. Use `--model SP-2` for an SP-2. Then print to it from another terminal:
+
+```
+uv run instax-print --host 127.0.0.1 photo.jpg
+```
+
+`--host` and `--port` are hidden from `instax-print --help` because only the simulator needs them.
 
 ## Inspecting Packets in Wireshark
 * Useful filter: `tcp.port == 8080 && tcp.flags.push == 1`

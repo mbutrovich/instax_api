@@ -2,55 +2,49 @@
 [![.github/workflows/python-test.yml](https://github.com/jpwsutton/instax_api/actions/workflows/python-test.yml/badge.svg)](https://github.com/jpwsutton/instax_api/actions/workflows/python-test.yml)
 [![Coverage Status](https://img.shields.io/coveralls/jpwsutton/instax_api/master.svg)](https://coveralls.io/github/jpwsutton/instax_api?branch=master)
 
-This is a Python Module to interact and print photos to the Fujifilm Instax SP-2 and SP-3 printers.
+A Python library and command line tool to print photos on the Fujifilm Instax SHARE SP-2 and SP-3 printers over Wi-Fi.
 
+## Install
 
-## Install this library
-
-In order to use this library, you will need to be using Python 3
-
-```
-pip3 install instax-api
-```
-
-
-## Usage
-
-**note** - From version 0.7.0 to 0.8.0, I moved away from adding a script to just calling the module from pyton using the `-m` argument.
+From a clone of this repository, with [uv](https://docs.astral.sh/uv/):
 
 ```
-$ python3 -m instax.print --help
-usage: instax-print [-h] [-i PIN] [-v {1,2,3}] image
-
-positional arguments:
-  image                 The location of the image to print.
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -i PIN, --pin PIN     The pin code to use, default: 1111.
-  -v {1,2,3}, --version {1,2,3}
-                        The version of Instax Printer to use (1, 2 or 3).
-                        Default is 2 (SP-2).                       
+uv tool install .
 ```
 
-### Examples:
+This installs the `instax-print` command. To run it from the clone without installing, use `uv run instax-print`.
 
- - Printing a Photo to an SP-2 printer: `python3 -m instax.print myPhoto.jpg`
- - Printing a Photo to an SP-3 printer: `python3 -m instax.print myPhoto.jpg -v 3`
- - Printing a Photo to a printer with a pin that is not the default (1111) `python3 -m instax.print myPhoto.jpg -i 1234`
+## Printing
 
-### Hints and tips:
- - Make sure you are connected to the correct wifi network, once the printer is turned on, there will be an SSID / WiFi network available that starts with `INSTAX-` followed by 8 numbers. You'll need to connect to this.
- - If you have a static IP address set up on your computer, you'll need to turn on DHCP before attempting to print, the Instax printer will automatically assign you a new address once you connect.
-- Some Unix based operating systems may require you to use sudo in order to access the network.
-- The printer will automatically turn itself off after roughly 10 minutes of innactivity.
-- The instax.print utility will attempt to automatically rotate the image so that it either is correctly printed in portrait, or landscape with the thick bottom edge of the print on the left. If you wish to print your photos in a specific orientation that differs from this, then it's reccomended that you orient your photo in a tool like GIMP first, then strip out the rotation metadata. Once the rotation metadata has been stripped, the photo will need to be in a portrait orientation relative to the finished print (e.g. thick edge at the bottom). 
-
-## Install Manually
+Turn the printer on and join its Wi-Fi network, whose name starts with `INSTAX-` followed by 8 digits. Then run:
 
 ```
-git clone https://github.com/jpwsutton/instax_api.git
-cd instax_api
-uv sync
-uv run python -m instax.print myPhoto.jpg -v 3
+instax-print photo.jpg
 ```
+
+The printer reports its own print size, so the same command works for the SP-2 and the SP-3. By default the photo is cropped to fill the print. Use `--fit contain` to print the whole photo with white bars instead.
+
+Other options:
+
+- `--pin 1234` sets the printer's PIN if you changed it from the default of 1111.
+- `--info` shows the model, firmware, battery level, film remaining and lifetime print count.
+- `--preview out.png` saves the image as it would be printed, without connecting. Add `--size 600x800` for the SP-2.
+- `-v` logs every frame sent and received.
+
+### Hints and tips
+
+- If your computer has a static IP address, switch to DHCP before printing. The printer assigns an address when you join its network.
+- The printer turns itself off after about 10 minutes without use.
+- The thick edge of the print is the bottom of the image. Rotate landscape photos before printing them, or they are cropped to portrait.
+
+## Library
+
+```python
+from instax import Printer
+
+printer = Printer(pin=1111)
+print(printer.info())
+printer.print_image("photo.jpg", fit="contain")
+```
+
+`print_image` also accepts a Pillow `Image`. Errors reported by the printer, such as an empty film pack or a wrong PIN, raise `instax.PrinterError`. Network failures raise `OSError`.

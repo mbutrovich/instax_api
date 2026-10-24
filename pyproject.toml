@@ -1,15 +1,18 @@
 [project]
 name = "instax-api"
-version = "0.8.0"
-description = "A Python module and app to print photos on the Fujifim Instax Printers"
+version = "0.9.0"
+description = "Print photos on Fujifilm Instax SHARE SP-2 and SP-3 printers over Wi-Fi"
 authors = [{ name = "James Sutton", email = "james@jsutton.co.uk" }]
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "Pillow>=9.3.0",
-    "loguru>=0.6.0",
 ]
+
+[project.scripts]
+instax-print = "instax.cli:main"
+instax-simulator = "instax.simulator:main"
 
 [project.urls]
 Homepage = "https://github.com/jpwsutton/instax_api"
@@ -29,3 +32,7 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "instax"
 module-root = ""
+
+[tool.pytest.ini_options]
+testpaths = ["instax", "tests"]
+addopts = "--doctest-modules"
