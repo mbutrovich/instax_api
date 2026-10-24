@@ -54,7 +54,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.image is None and not args.info:
         parser.error("an image is required unless --info is given")
 
-    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(message)s")
+    # Configure only this library's logger, so -v does not turn on Pillow's debug output.
+    logger = logging.getLogger("instax")
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG if args.verbose else logging.INFO)
     try:
         if args.preview:
             with Image.open(args.image) as image:

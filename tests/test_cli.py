@@ -1,5 +1,7 @@
 """Tests for the command line interface."""
 
+import logging
+
 import pytest
 from PIL import Image
 
@@ -48,6 +50,12 @@ def test_preview_does_not_connect(photo, tmp_path):
     assert cli.main(["--preview", str(output), "--size", "800x800", photo]) == 0
     with Image.open(output) as preview:
         assert preview.size == (800, 800)
+
+
+def test_verbose_only_affects_this_library(photo, tmp_path):
+    cli.main(["-v", "--preview", str(tmp_path / "preview.png"), photo])
+    assert logging.getLogger("instax.client").isEnabledFor(logging.DEBUG)
+    assert not logging.getLogger("PIL").isEnabledFor(logging.DEBUG)
 
 
 def test_image_required():
