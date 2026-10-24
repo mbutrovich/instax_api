@@ -93,15 +93,23 @@ The original project names these codes but does not say when the printer returns
 | `0x53` | Transfer end | none | none | Verified |
 | `0xB0` | Print start | none | u32 estimated print time in tenths of a second | Verified |
 | `0xB3` | Lock | state (u8, 1 to lock and 0 to unlock), 3 zero bytes | none | Verified |
-| `0xB4` | Power off | 4 zero bytes | none | Unconfirmed |
+| `0xB4` | Power off | 4 zero bytes | none | Verified |
 | `0xB6` | Change PIN | 2 zero bytes, new PIN (u16). The header carries the old PIN. | none | Unconfirmed |
-| `0xC0` | Version | none | u16 unknown, u16 firmware, u16 hardware | Verified |
+| `0xC0` | Version | none | u16 unknown, u16 firmware, u16 hardware, 2 zero bytes | Verified |
 | `0xC1` | Print count | none | u32 lifetime print count at 0 | Verified |
 | `0xC2` | Model name | none | ASCII model name, such as `SP-3` | Verified |
 | `0xC3` | Print status | none | none. The return code carries the state. | Verified |
-| `0xC4` | Function version | 2 zero bytes, u16 key | u16 value at 2 | Original project |
+| `0xC4` | Function version | 2 zero bytes, u16 key | u16 key, u16 value | Verified |
 
-Versions are formatted as two hex bytes, so a firmware field of `0x0102` reads as `01.02`.
+Versions are formatted as two hex bytes, so a firmware field of `0x0102` reads as `01.02`. The SP-3 sends `0x0100` in the unknown Version field.
+
+The SP-3 answers Function version for keys 0 to 9 with these values. **Verified.** What each key means is unknown.
+
+| Key | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Value | 0 | 2 | 3 | 2 | 1 | 1 | 0 | 0 | 0 | 0 |
+
+Power off returns `0x00`, and the printer stops answering within 20 seconds. **Verified.**
 
 The SP-3 sends these Specifications values. **Verified.**
 
@@ -119,7 +127,9 @@ The SP-2 frames in the original project send width 600, 16 at offset 14 and 0 at
 
 Lock gives one session exclusive use of the printer. While one session id holds the lock, the printer answers every command from any other session id with `0xA0` and no payload, including Model name, Lock and Unlock. The session holding the lock keeps getting `0x00`. After it unlocks, other sessions get `0x00` again. Both sessions in this test ran on the same computer, so the printer tells clients apart by session id, not only by address. **Verified.**
 
-Whether the lock expires on its own, or only on unlock or power off, is **unconfirmed**.
+The lock expires 60 seconds after the holder's last command, without an unlock. With the holder silent, another session polling once a second was refused until 59.1 seconds after the lock and got `0x00` at 60.1 seconds. When the holder sent Model name 30 seconds after locking, the other session was refused until 89.6 seconds and got `0x00` at 90.6 seconds. Commands from other sessions do not extend the lock. An unlock from the original holder after the lock expires still returns `0x00`. **Verified.**
+
+The client sends a command at least once a second for the whole print, so its lock does not expire mid-print.
 
 The Lock command and response frames in the original project's test suite show that the original client sent Lock as well.
 
@@ -156,6 +166,8 @@ Every command carries the PIN in its header, and there is no pairing step. The S
 
 The printer answers `0xF7` to a wrong PIN. The response has no payload, but its status byte still reports the film count and battery. **Verified.** The SP-3 tested here rejected PIN 1234, so it checks the PIN with its default settings.
 
+Version sent with PIN `0xFFFF` gets `0xF7` on the SP-3. **Verified.** A client can use this to check whether a printer requires a PIN without knowing it.
+
 A printer with PIN protection turned off accepts any PIN. **Unconfirmed.**
 
 ## Open questions
@@ -163,6 +175,6 @@ A printer with PIN protection turned off accepts any PIN. **Unconfirmed.**
 - What response bytes 8 to 11 and 13 hold.
 - What the Specifications fields at offsets 6, 14 and 16 mean.
 - How the printer reports the other error cases, such as no film or an open cover.
-- Whether the lock expires if its holder never unlocks.
+- What the Function version keys mean.
 
 Running a command with `-v` logs every response frame in hex, which answers most of these when the situation comes up.
