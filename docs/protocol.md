@@ -53,11 +53,11 @@ All integers are big-endian. The length field counts the whole frame. The checks
 
 Bit 2 of the eject flags is set while a print is ejecting. **Verified.**
 
-The status byte holds the number of film sheets left in bits 0 to 3. **Verified.** Bits 4 to 6 hold the battery state. **Original project.** Bit 7 is set when the film cover is open. **Unconfirmed.**
+The status byte holds the number of film sheets left in bits 0 to 3. **Verified.** Bits 4 to 6 hold the battery state. **Verified.** Bit 7 is set when the film cover is open. **Unconfirmed.**
 
 A film count above 10 means the printer is out of film. **Unconfirmed.**
 
-The battery state splits into a charge level from 0 to 3 in its low two bits and a USB charging flag in its high bit. **Unconfirmed.** The SP-3 reported 5 while plugged in and partly charged, which fits that reading.
+The battery state splits into a charge level from 0 to 3 in its low two bits and a USB charging flag in its high bit. **Verified.** The SP-3 reported 5 while plugged in and partly charged, 7 while plugged in and fully charged, and 3 after it was unplugged at full charge.
 
 ### Return codes
 
@@ -161,6 +161,5 @@ A printer with PIN protection turned off accepts any PIN. **Unconfirmed.**
 - What response bytes 8 to 11 and 13 hold.
 - What the Specifications fields at offsets 6, 14 and 16 mean.
 - How the printer reports the error cases, such as no film, an open cover or a wrong PIN.
-- Whether the battery decoding holds for values other than 5.
 
 Running a command with `-v` logs every response frame in hex, which answers most of these when the situation comes up.
