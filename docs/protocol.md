@@ -77,10 +77,10 @@ The battery state splits into a charge level from 0 to 3 in its low two bits and
 | `0xF4` | Out of film | Original project |
 | `0xF5` | Mechanism error | Original project |
 | `0xF6` | Motor error | Original project |
-| `0xF7` | Wrong PIN | Original project |
+| `0xF7` | Wrong PIN | Verified |
 | `0xF8` | Sensor error | Original project |
 
-The original project names these codes but does not say when the printer returns them. None of the error codes has been observed yet.
+The original project names these codes but does not say when the printer returns them. Of the error codes, only `0xF7` has been observed.
 
 ## Opcodes
 
@@ -152,7 +152,7 @@ The original project's client also sent Function version for keys 1 to 8 before 
 
 Every command carries the PIN in its header, and there is no pairing step. The SP-3 accepted the default PIN 1111. **Verified.**
 
-The printer answers `0xF7` to a wrong PIN. **Original project.**
+The printer answers `0xF7` to a wrong PIN. The response has no payload, but its status byte still reports the film count and battery. **Verified.** The SP-3 tested here rejected PIN 1234, so it checks the PIN with its default settings.
 
 A printer with PIN protection turned off accepts any PIN. **Unconfirmed.**
 
@@ -160,6 +160,6 @@ A printer with PIN protection turned off accepts any PIN. **Unconfirmed.**
 
 - What response bytes 8 to 11 and 13 hold.
 - What the Specifications fields at offsets 6, 14 and 16 mean.
-- How the printer reports the error cases, such as no film, an open cover or a wrong PIN.
+- How the printer reports the other error cases, such as no film, an open cover or a second client.
 
 Running a command with `-v` logs every response frame in hex, which answers most of these when the situation comes up.
