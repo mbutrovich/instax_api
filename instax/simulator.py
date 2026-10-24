@@ -53,6 +53,7 @@ class Simulator:
         print_polls: int = 1,
         print_result: int = ReturnCode.OK,
         start_busy: int = 0,
+        lock_result: int = ReturnCode.OK,
         save_dir: Path | None = None,
     ):
         """Create a simulator.
@@ -60,6 +61,8 @@ class Simulator:
         ``print_time`` is the print estimate in tenths of a second. ``print_polls``
         is how many status polls report printing before ``print_result``.
         ``start_busy`` is how many print start commands are refused as busy.
+        ``lock_result`` is the return code for lock commands. Each accepted lock
+        command appends its state to ``lock_history``.
         """
         self.model = model
         self.width = width
@@ -75,9 +78,11 @@ class Simulator:
         self.print_polls = print_polls
         self.print_result = print_result
         self.start_busy = start_busy
+        self.lock_result = lock_result
         self.save_dir = save_dir
         self.images: list[bytes] = []
         self.opcodes: list[int] = []
+        self.lock_history: list[bool] = []
         self._lock = threading.Lock()
         self._expected_length = 0
         self._received = bytearray()
@@ -132,6 +137,10 @@ class Simulator:
             return ok, struct.pack(">HHHH4xHBxI8x", self.width, self.height, 256, 10, self.chunk_size, 16, 0)
         if opcode == Opcode.PRINT_COUNT:
             return ok, struct.pack(">I12x", self.print_count)
+        if opcode == Opcode.LOCK:
+            if self.lock_result == ok:
+                self.lock_history.append(unpack_payload(">B", payload)[0] == 1)
+            return self.lock_result, b""
         if opcode == Opcode.RESET:
             return ok, b""
         if opcode == Opcode.TRANSFER_START:

@@ -289,6 +289,11 @@ class Version:
         return cls(f"{firmware >> 8:02X}.{firmware & 0xFF:02X}", f"{hardware >> 8:02X}.{hardware & 0xFF:02X}")
 
 
+def lock_payload(locked: bool) -> bytes:
+    """Build the payload that locks the printer to this client or releases it."""
+    return struct.pack(">B3x", 1 if locked else 0)
+
+
 def transfer_start_payload(image_format: int, options: int, length: int) -> bytes:
     """Build the payload that announces an image transfer."""
     return struct.pack(">BBI6x", image_format, options, length)

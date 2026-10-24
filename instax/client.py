@@ -12,6 +12,7 @@ from os import PathLike
 from PIL import Image
 
 from instax.errors import (
+    InstaxError,
     PrinterError,
     PrintTimeoutError,
     ProtocolError,
@@ -27,6 +28,7 @@ from instax.protocol import (
     decode_response,
     describe_return_code,
     encode_command,
+    lock_payload,
     read_frame,
     transfer_start_payload,
     unpack_payload,
@@ -152,6 +154,27 @@ class Printer:
                 self.print_image(opened, fit)
             return
 
+        self._set_lock(True)
+        try:
+            self._print(image, fit)
+        finally:
+            try:
+                self._set_lock(False)
+            except (InstaxError, OSError) as e:
+                logger.warning("Could not unlock the printer: %s", e)
+
+    def _set_lock(self, locked: bool) -> None:
+        """Lock the printer to this client, or release it.
+
+        A refused lock is logged rather than raised, so a print can still go ahead.
+        """
+        with self._connect() as connection:
+            response = connection.send(Opcode.LOCK, lock_payload(locked), allow=range(256))
+        if response.return_code != ReturnCode.OK:
+            action = "lock" if locked else "unlock"
+            logger.warning("The printer refused to %s: %s", action, describe_return_code(response.return_code))
+
+    def _print(self, image: Image.Image, fit: Fit) -> None:
         with self._connect() as connection:
             model = _model_name(connection)
             if model in UNSUPPORTED_MODELS:

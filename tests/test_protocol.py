@@ -13,6 +13,7 @@ from instax.protocol import (
     decode_response,
     encode_command,
     encode_response,
+    lock_payload,
     transfer_start_payload,
 )
 
@@ -76,6 +77,11 @@ def test_decode_command():
     assert command.opcode == Opcode.MODEL_NAME
     assert command.session_id == 0x0B8DC2B4
     assert command.payload == b""
+
+
+def test_lock_payload():
+    assert decode_command(frame(COMMANDS["lock"])).payload == lock_payload(True)
+    assert lock_payload(False) == bytes(4)
 
 
 def test_transfer_start_payload():

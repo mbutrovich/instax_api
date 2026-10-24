@@ -50,6 +50,7 @@ def test_print_sequence():
         run(simulator)
     chunks = -(-16 * 16 * 3 // 300)
     assert simulator.opcodes == [
+        Opcode.LOCK,
         Opcode.MODEL_NAME,
         Opcode.PRINT_COUNT,
         Opcode.SPECIFICATIONS,
@@ -60,7 +61,46 @@ def test_print_sequence():
         Opcode.VERSION,
         Opcode.PRINT_START,
         *[Opcode.PRINT_STATUS] * 3,
+        Opcode.LOCK,
     ]
+    assert simulator.lock_history == [True, False]
+
+
+@pytest.mark.parametrize(
+    "options, error",
+    [
+        ({"print_result": ReturnCode.MOTOR}, PrinterError),
+        ({"film": 15}, PrinterError),
+        ({"model": "SP-1"}, UnsupportedPrinterError),
+    ],
+    ids=["print fails", "no film", "unsupported model"],
+)
+def test_unlocks_after_failure(options, error):
+    with Simulator(width=16, height=16, **options) as simulator, pytest.raises(error):
+        run(simulator)
+    assert simulator.lock_history == [True, False]
+
+
+def test_unlock_failure_is_logged(monkeypatch, caplog):
+    set_lock = Printer._set_lock
+
+    def unlock_fails(self, locked):
+        if not locked:
+            raise OSError("printer switched off")
+        set_lock(self, locked)
+
+    monkeypatch.setattr(Printer, "_set_lock", unlock_fails)
+    with Simulator(width=16, height=16) as simulator:
+        run(simulator)
+    assert len(simulator.images) == 1
+    assert "printer switched off" in caplog.text
+
+
+def test_lock_refused_is_ignored(caplog):
+    with Simulator(width=16, height=16, lock_result=ReturnCode.OTHER_CLIENT) as simulator:
+        run(simulator)
+    assert len(simulator.images) == 1
+    assert "another device" in caplog.text
 
 
 @pytest.mark.parametrize("chunk_size", [1, 7, 768, 769, 60000])
@@ -126,7 +166,7 @@ def test_print_timeout(monkeypatch):
 def test_unsupported_model():
     with Simulator(model="SP-1") as simulator, pytest.raises(UnsupportedPrinterError):
         run(simulator)
-    assert simulator.opcodes == [Opcode.MODEL_NAME]
+    assert simulator.opcodes == [Opcode.LOCK, Opcode.MODEL_NAME, Opcode.LOCK]
 
 
 def test_print_from_path(tmp_path):
