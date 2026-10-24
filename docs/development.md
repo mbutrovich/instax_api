@@ -10,7 +10,8 @@
 
 ## Layout
 
-* `instax/protocol.py` encodes and decodes frames. Its module docstring describes the frame format.
+* `docs/protocol.md` describes the printer protocol and which parts have been confirmed on a printer.
+* `instax/protocol.py` encodes and decodes frames.
 * `instax/client.py` holds the `Printer` class and the print sequence.
 * `instax/image.py` prepares photos and encodes them in the printer's raw image format.
 * `instax/simulator.py` is a fake printer that the tests run against.

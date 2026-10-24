@@ -50,3 +50,7 @@ printer.print_image("photo.jpg", fit="contain")
 ```
 
 `print_image` also accepts a Pillow `Image`. Errors reported by the printer, such as an empty film pack or a wrong PIN, raise `instax.PrinterError`. Network failures raise `OSError`.
+
+## Development
+
+See [docs/development.md](docs/development.md) for setting up a development environment and running the tests and the simulator, and [docs/protocol.md](docs/protocol.md) for how the printer protocol works.
