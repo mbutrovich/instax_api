@@ -53,7 +53,7 @@ class Simulator:
         print_polls: int = 1,
         print_result: int = ReturnCode.OK,
         start_busy: int = 0,
-        lock_result: int = ReturnCode.OK,
+        lock_timeout: float = 60.0,
         save_dir: Path | None = None,
     ):
         """Create a simulator.
@@ -61,8 +61,9 @@ class Simulator:
         ``print_time`` is the print estimate in tenths of a second. ``print_polls``
         is how many status polls report printing before ``print_result``.
         ``start_busy`` is how many print start commands are refused as busy.
-        ``lock_result`` is the return code for lock commands. Each accepted lock
-        command appends its state to ``lock_history``.
+        While a session holds the lock, commands from other sessions are refused.
+        The lock expires ``lock_timeout`` seconds after the holder's last command.
+        Each accepted lock command appends its state to ``lock_history``.
         """
         self.model = model
         self.width = width
@@ -78,7 +79,7 @@ class Simulator:
         self.print_polls = print_polls
         self.print_result = print_result
         self.start_busy = start_busy
-        self.lock_result = lock_result
+        self.lock_timeout = lock_timeout
         self.save_dir = save_dir
         self.images: list[bytes] = []
         self.opcodes: list[int] = []
@@ -87,6 +88,8 @@ class Simulator:
         self._expected_length = 0
         self._received = bytearray()
         self._polls_left = 0
+        self._lock_holder: int | None = None
+        self._lock_expiry = 0.0
         self._server = _Server((host, port), self)
         self._thread: threading.Thread | None = None
 
@@ -115,8 +118,10 @@ class Simulator:
             self.opcodes.append(command.opcode)
             if command.pin != self.pin:
                 return_code, payload = ReturnCode.WRONG_PIN, b""
+            elif self._locked_by_other(command.session_id):
+                return_code, payload = ReturnCode.OTHER_CLIENT, b""
             else:
-                return_code, payload = self._handle(command.opcode, command.payload)
+                return_code, payload = self._handle(command.opcode, command.session_id, command.payload)
         return encode_response(
             command.opcode,
             command.session_id,
@@ -127,7 +132,19 @@ class Simulator:
             film=self.film,
         )
 
-    def _handle(self, opcode: int, payload: bytes) -> tuple[int, bytes]:
+    def _locked_by_other(self, session_id: int) -> bool:
+        """Return whether another session holds the lock, extending it if this one does."""
+        now = time.monotonic()
+        if self._lock_holder is not None and now >= self._lock_expiry:
+            self._lock_holder = None
+        if self._lock_holder is None:
+            return False
+        if self._lock_holder != session_id:
+            return True
+        self._lock_expiry = now + self.lock_timeout
+        return False
+
+    def _handle(self, opcode: int, session_id: int, payload: bytes) -> tuple[int, bytes]:
         ok = ReturnCode.OK
         if opcode == Opcode.MODEL_NAME:
             return ok, self.model.encode("ascii")
@@ -138,9 +155,11 @@ class Simulator:
         if opcode == Opcode.PRINT_COUNT:
             return ok, struct.pack(">I12x", self.print_count)
         if opcode == Opcode.LOCK:
-            if self.lock_result == ok:
-                self.lock_history.append(unpack_payload(">B", payload)[0] == 1)
-            return self.lock_result, b""
+            locked = unpack_payload(">B", payload)[0] == 1
+            self.lock_history.append(locked)
+            self._lock_holder = session_id if locked else None
+            self._lock_expiry = time.monotonic() + self.lock_timeout
+            return ok, b""
         if opcode == Opcode.RESET:
             return ok, b""
         if opcode == Opcode.TRANSFER_START:

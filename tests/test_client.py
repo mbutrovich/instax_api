@@ -1,5 +1,7 @@
 """Tests for the printer client, run against the simulator."""
 
+import time
+
 import pytest
 from PIL import Image
 
@@ -19,9 +21,9 @@ def no_waiting(monkeypatch):
     monkeypatch.setattr(client, "TRANSFER_SETTLE_TIME", 0)
 
 
-def run(simulator, image=None, fit="crop", **printer_options):
+def run(simulator, image=None, fit="crop", printer=None, **printer_options):
     """Print an image on a simulator."""
-    printer = Printer(*simulator.address, **printer_options)
+    printer = printer or Printer(*simulator.address, **printer_options)
     printer.print_image(image or Image.new("RGB", (10, 10), RED), fit=fit)
 
 
@@ -97,11 +99,50 @@ def test_unlock_failure_is_logged(monkeypatch, caplog):
     assert "printer switched off" in caplog.text
 
 
-def test_lock_refused_is_ignored(caplog):
-    with Simulator(width=16, height=16, lock_result=ReturnCode.OTHER_CLIENT) as simulator:
-        run(simulator)
-    assert len(simulator.images) == 1
-    assert "another device" in caplog.text
+def two_printers(simulator):
+    """Return two clients with different session ids."""
+    holder, other = Printer(*simulator.address), Printer(*simulator.address)
+    other._session_id = holder._session_id + 1
+    return holder, other
+
+
+def test_print_stops_when_lock_refused():
+    with Simulator(width=16, height=16) as simulator:
+        holder, other = two_printers(simulator)
+        holder._set_lock(True)
+        with pytest.raises(PrinterError) as excinfo:
+            run(simulator, printer=other)
+    assert excinfo.value.return_code == ReturnCode.OTHER_CLIENT
+    assert simulator.opcodes == [Opcode.LOCK, Opcode.LOCK]
+    assert simulator.images == []
+
+
+def test_lock_refuses_other_sessions():
+    with Simulator() as simulator:
+        holder, other = two_printers(simulator)
+        holder._set_lock(True)
+        with pytest.raises(PrinterError) as excinfo:
+            other.info()
+        assert excinfo.value.return_code == ReturnCode.OTHER_CLIENT
+        holder.info()
+        holder._set_lock(False)
+        other.info()
+
+
+def test_lock_expires_after_holder_goes_quiet():
+    with Simulator(lock_timeout=0.3) as simulator:
+        holder, other = two_printers(simulator)
+        holder._set_lock(True)
+        time.sleep(0.2)
+        holder.info()
+        time.sleep(0.2)
+        # 0.4 s after the lock, but only 0.2 s after the holder's last command.
+        with pytest.raises(PrinterError):
+            other.info()
+        # The refused command does not extend the lock.
+        time.sleep(0.2)
+        other.info()
+        holder._set_lock(False)
 
 
 @pytest.mark.parametrize("chunk_size", [1, 7, 768, 769, 60000])

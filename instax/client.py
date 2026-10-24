@@ -170,13 +170,10 @@ class Printer:
     def _set_lock(self, locked: bool) -> None:
         """Lock the printer to this client, or release it.
 
-        A refused lock is logged rather than raised, so a print can still go ahead.
+        The printer releases the lock by itself 60 seconds after this client's last command.
         """
         with self._connect() as connection:
-            response = connection.send(Opcode.LOCK, lock_payload(locked), allow=range(256))
-        if response.return_code != ReturnCode.OK:
-            action = "lock" if locked else "unlock"
-            logger.warning("The printer refused to %s: %s", action, describe_return_code(response.return_code))
+            connection.send(Opcode.LOCK, lock_payload(locked))
 
     def _print(self, image: Image.Image, fit: Fit) -> None:
         with self._connect() as connection:

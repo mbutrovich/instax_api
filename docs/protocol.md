@@ -147,12 +147,12 @@ The SP-1 uses a different image format, which this library does not implement. *
 
 The client prints in this order. Each numbered group is one TCP connection. **Verified.**
 
-1. Lock with state 1.
+1. Lock with state 1. The client stops if the printer refuses.
 2. Model name, Print count, Specifications, Reset. The client stops here if the status byte shows the cover open or no film.
 3. Transfer start, one Send chunk per chunk, Transfer end.
 4. Version, repeated once a second while the printer reports printing or ejecting or the eject flag is set. The client then waits until at least one second has passed since Transfer end and sends Print start, repeated once a second while the printer reports printing or ejecting.
 5. Print status, once a second, on a new connection each time. `0x7F` means the print is still running and `0x00` means it finished. The client also treats `0xA3` as still running.
-6. Lock with state 0. The client sends this even when the print fails.
+6. Lock with state 0. The client sends this even when the print fails after a successful lock.
 
 On the SP-3, the print took about as long as the Print start estimate (14 seconds), and every status poll during it returned `0x7F` with the eject flag set. The film count dropped by one on the final poll. **Verified.**
 
