@@ -15,7 +15,7 @@ instax-print = "instax.cli:main"
 instax-simulator = "instax.simulator:main"
 
 [project.urls]
-Homepage = "https://github.com/jpwsutton/instax_api"
+Homepage = "https://github.com/mbutrovich/instax_api"
 
 [dependency-groups]
 dev = [

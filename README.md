@@ -1,18 +1,20 @@
 # instax_api
-[![.github/workflows/python-test.yml](https://github.com/jpwsutton/instax_api/actions/workflows/python-test.yml/badge.svg)](https://github.com/jpwsutton/instax_api/actions/workflows/python-test.yml)
-[![Coverage Status](https://img.shields.io/coveralls/jpwsutton/instax_api/master.svg)](https://coveralls.io/github/jpwsutton/instax_api?branch=master)
+[![Build, Lint and Test](https://github.com/mbutrovich/instax_api/actions/workflows/python-test.yml/badge.svg)](https://github.com/mbutrovich/instax_api/actions/workflows/python-test.yml)
+[![Coverage Status](https://coveralls.io/repos/github/mbutrovich/instax_api/badge.svg?branch=main)](https://coveralls.io/github/mbutrovich/instax_api?branch=main)
 
 A Python library and command line tool to print photos on the Fujifilm Instax SHARE SP-2 and SP-3 printers over Wi-Fi.
 
+This is a fork of [jpwsutton/instax_api](https://github.com/jpwsutton/instax_api), which is archived. It has been tested on an SP-3. The `instax-api` package on PyPI is the original project, not this fork.
+
 ## Install
 
-From a clone of this repository, with [uv](https://docs.astral.sh/uv/):
+With [uv](https://docs.astral.sh/uv/):
 
 ```
-uv tool install .
+uv tool install git+https://github.com/mbutrovich/instax_api
 ```
 
-This installs the `instax-print` command. To run it from the clone without installing, use `uv run instax-print`.
+This installs the `instax-print` command. From a clone of this repository, run `uv tool install .` instead, or use `uv run instax-print` without installing.
 
 ## Printing
 
