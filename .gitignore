@@ -92,3 +92,12 @@ ENV/
 # Coverage
 .coverage
 .venv/
+
+# Editor and IDE settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS Finder metadata
+.DS_Store
