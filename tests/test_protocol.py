@@ -111,6 +111,15 @@ def test_film_count(film, remaining, empty):
     assert response.film_empty == empty
 
 
+@pytest.mark.parametrize(
+    "battery, level, charging",
+    [(0, 0, False), (1, 1, False), (3, 3, False), (4, 0, True), (5, 1, True), (7, 3, True)],
+)
+def test_battery(battery, level, charging):
+    response = decode_response(encode_response(Opcode.VERSION, 1, battery=battery))
+    assert (response.battery_level, response.charging) == (level, charging)
+
+
 def test_status_bits_are_independent():
     response = decode_response(encode_response(Opcode.VERSION, 1, ejecting=True, cover_open=True, battery=7, film=15))
     assert (response.ejecting, response.cover_open, response.battery, response.film) == (True, True, 7, 15)

@@ -67,7 +67,10 @@ class PrinterInfo:
     model: str
     firmware: str
     hardware: str
-    battery: int
+    battery_level: int
+    """Charge level from 0 to 3."""
+    charging: bool
+    """Whether the printer is charging over USB."""
     film_remaining: int
     print_count: int
     width: int
@@ -137,7 +140,8 @@ class Printer:
             model=model,
             firmware=version.firmware,
             hardware=version.hardware,
-            battery=count.battery,
+            battery_level=count.battery_level,
+            charging=count.charging,
             film_remaining=count.film_remaining,
             print_count=unpack_payload(">I", count.payload)[0],
             width=specs.width,

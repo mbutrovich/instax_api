@@ -180,9 +180,20 @@ class Response:
     ejecting: bool
     cover_open: bool
     battery: int
+    """Raw 3-bit battery state. See ``battery_level`` and ``charging``."""
     film: int
     """Raw film count. Values above 10 mean the printer is out of film."""
     payload: bytes
+
+    @property
+    def battery_level(self) -> int:
+        """Charge level from 0 to 3."""
+        return self.battery & 0x03
+
+    @property
+    def charging(self) -> bool:
+        """Whether the printer is charging over USB."""
+        return bool(self.battery & 0x04)
 
     @property
     def film_empty(self) -> bool:

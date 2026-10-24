@@ -33,10 +33,13 @@ def test_print(photo):
     assert len(simulator.images) == 1
 
 
-def test_info(capsys):
-    with Simulator(model="SP-3") as simulator:
+@pytest.mark.parametrize("battery, expected", [(5, "Battery: 1 of 3, charging"), (3, "Battery: 3 of 3\n")])
+def test_info(capsys, battery, expected):
+    with Simulator(model="SP-3", battery=battery) as simulator:
         assert cli.main([*address_args(simulator), "--info"]) == 0
-    assert "SP-3" in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert "Model: SP-3" in output
+    assert expected in output
 
 
 def test_error_exit_code(photo, capsys):

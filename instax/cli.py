@@ -72,7 +72,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Model: {info.model}")
             print(f"Firmware: {info.firmware}")
             print(f"Hardware: {info.hardware}")
-            print(f"Battery: {info.battery}")
+            print(f"Battery: {info.battery_level} of 3{', charging' if info.charging else ''}")
             print(f"Film remaining: {info.film_remaining}")
             print(f"Lifetime prints: {info.print_count}")
             print(f"Print size: {info.width}x{info.height}")

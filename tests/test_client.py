@@ -26,12 +26,13 @@ def run(simulator, image=None, fit="crop", **printer_options):
 
 
 def test_info():
-    with Simulator(model="SP-3", battery=2, film=7, print_count=42) as simulator:
+    with Simulator(model="SP-3", battery=5, film=7, print_count=42) as simulator:
         info = Printer(*simulator.address).info()
     assert info.model == "SP-3"
     assert info.firmware == "01.13"
     assert info.hardware == "00.00"
-    assert info.battery == 2
+    assert info.battery_level == 1
+    assert info.charging
     assert info.film_remaining == 7
     assert info.print_count == 42
     assert (info.width, info.height) == (800, 800)
