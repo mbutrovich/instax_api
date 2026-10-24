@@ -51,5 +51,6 @@ optional arguments:
 ```
 git clone https://github.com/jpwsutton/instax_api.git
 cd instax_api
-python3 setup.py install
+uv sync
+uv run python -m instax.print myPhoto.jpg -v 3
 ```

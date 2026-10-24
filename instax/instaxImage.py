@@ -30,12 +30,16 @@ class InstaxImage:
             # Square images are a bit tricky, we have to assume they are oriented correctly
             logger.info("Rotating Square Image")
             self.myImage = self.myImage.rotate(-90, expand=True)
-        imagePixels = self.myImage.getdata()
-        arrayLen = len(imagePixels) * 3
+        if self.myImage.mode != "RGB":
+            raise Exception("Image mode was not RGB, it was: %s" % self.myImage.mode)
+        # tobytes() is interleaved RGB and, unlike getdata(), is not deprecated in any Pillow version.
+        imagePixels = self.myImage.tobytes()
+        arrayLen = len(imagePixels)
         encodedBytes = [None] * arrayLen
         for h in range(self.printHeight):
             for w in range(self.printWidth):
-                r, g, b = imagePixels[(h * self.printWidth) + w]
+                pixel = ((h * self.printWidth) + w) * 3
+                r, g, b = imagePixels[pixel : pixel + 3]
                 redTarget = (((w * self.printHeight) * 3) + (self.printHeight * 0)) + h
                 greenTarget = (((w * self.printHeight) * 3) + (self.printHeight * 1)) + h
                 blueTarget = (((w * self.printHeight) * 3) + (self.printHeight * 2)) + h

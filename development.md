@@ -1,13 +1,12 @@
 # Development Guide
 
 
-## Developing using Poetry
+## Developing using uv
 
-* Install poetry on your development machine: https://python-poetry.org/docs/
-* Run `poetry shell` to launch the virtual environment.
-* Run `poetry install` to download all main and dev dependencies.
-* Run `pre-commit install` and then `pre-commit install --hook-type commit-msg` to set up the pre-commit checks.
-* When you are finished, just use `exit` to end your session.
+* Install uv on your development machine: https://docs.astral.sh/uv/
+* Run `uv sync` to create the virtual environment in `.venv` and install all main and dev dependencies.
+* Prefix commands with `uv run` to run them in the virtual environment, for example `uv run pytest instax`.
+* Run `uv run pre-commit install` and then `uv run pre-commit install --hook-type commit-msg` to set up the pre-commit checks.
 
 ## Running the Test Server
 
@@ -41,7 +40,7 @@ For example, when using the test server, you can use the following command to pr
 The `-d / --debug` option will print a lot more data to the log file, specifically detailed dumps of every command / response sent or received by the client. This is handy when trying to identify issues in the packet library.
 
 ## Running tests
-Simply run the command: `python3 -m pytest instax`
+Simply run the command: `uv run pytest instax`
 
 
 ## Inspecting Packets in Wireshark
